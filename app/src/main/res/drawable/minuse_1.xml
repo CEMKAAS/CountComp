@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="256dp"
+    android:height="256dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path
+        android:strokeColor="#ffdad6"
+        android:strokeWidth="22.4"
+        android:strokeMiterLimit="100"
+        android:name="Эллипс 2"
+        android:pathData="m256 56c110.5 0 200 89.5 200 200c0 110.5 -89.5 200 -200 200c-110.5 0 -200 -89.5 -200 -200c0 -110.5 89.5 -200 200 -200z" />
+    <path
+        android:strokeColor="#ffdad6"
+        android:strokeWidth="22.4"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:name="Линия 1"
+        android:pathData="m194 255.8v-0.8h125v0.8h-125z" />
+</vector>

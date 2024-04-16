@@ -1,0 +1,14 @@
+<vector android:height="256dp" android:viewportHeight="512"
+    android:viewportWidth="512" android:width="256dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:name="Эллипс 2"
+        android:pathData="m256 56c110.5 0 200 89.5 200 200c0 110.5 -89.5 200 -200 200c-110.5 0 -200 -89.5 -200 -200c0 -110.5 89.5 -200 200 -200z"
+        android:strokeColor="#bccbb0" android:strokeMiterLimit="100" android:strokeWidth="22.4"/>
+    <path android:name="Линия 1"
+        android:pathData="m194 255.8v-0.8h125v0.8h-125z"
+        android:strokeColor="#bccbb0" android:strokeLineCap="round"
+        android:strokeLineJoin="round" android:strokeWidth="22.4"/>
+    <path android:name="Линия 1"
+        android:pathData="m255.9 318.9 -0.8 0 -0 -125 0.8 -0 0 125z"
+        android:strokeColor="#bccbb0" android:strokeLineCap="round"
+        android:strokeLineJoin="round" android:strokeWidth="22.4"/>
+</vector>
