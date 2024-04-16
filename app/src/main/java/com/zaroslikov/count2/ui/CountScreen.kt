@@ -26,9 +26,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -38,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.zaroslikov.count2.R
 import com.zaroslikov.count2.data.Item
@@ -130,6 +134,9 @@ fun MyCountApp(
             },
             sheetState = sheetState,
             countList = countAD,
+            addCount = {scope.launch {
+                viewModel.insertTable()
+            }},
             modifier = Modifier
                 .padding(contentPadding)
                 .fillMaxSize()
@@ -147,6 +154,7 @@ fun ImageBody(
     buttonSheet: () -> Unit,
     sheetState: SheetState,
     countList: List<Item>,
+    addCount: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -161,7 +169,6 @@ fun ImageBody(
             text = itemUiState.count.toString(), fontSize = 50.sp
         )
         Row() {
-
             Image(
                 painter = painterResource(id = R.drawable.minuse),
                 contentDescription = null,
@@ -171,7 +178,6 @@ fun ImageBody(
                     .clickable(onClick = minus),
                 contentScale = ContentScale.Fit
             )
-
             Image(
                 painter = painterResource(id = R.drawable.plus), contentDescription = null,
                 modifier = Modifier
@@ -184,7 +190,7 @@ fun ImageBody(
     }
 
     if (showBottomSheet.value) {
-        BottomSheet(showBottomSheet, buttonSheet, sheetState, countList)
+        BottomSheet(showBottomSheet, buttonSheet, sheetState, countList, addCount)
     }
 
 }
@@ -196,8 +202,10 @@ fun BottomSheet(
     showBottomSheet: MutableState<Boolean>,
     scope: () -> Unit,
     sheetState: SheetState,
-    countList: List<Item>
+    countList: List<Item>,
+    addCount: () -> Unit,
 ) {
+    val openAlertDialog = remember { mutableStateOf(false) }
     ModalBottomSheet(
         onDismissRequest = { showBottomSheet.value = false },
         sheetState = sheetState,
@@ -218,7 +226,7 @@ fun BottomSheet(
                         contentDescription = "Localized description"
                     )
                 }
-                IconButton(onClick = { }) {
+                IconButton(onClick = {openAlertDialog.value= true}) {
                     Icon(
                         imageVector = Icons.Filled.Add,
                         contentDescription = "Localized description"
@@ -231,7 +239,58 @@ fun BottomSheet(
             CountDetails(countList = countList)
         }
     }
+    if (openAlertDialog.value){
+        AlterDialog(onDismiss = {openAlertDialog.value = true}, addCount = addCount)
+    }
 }
+
+@Composable
+fun AlterDialog(
+    onDismiss:()-> Unit,
+    addCount: () -> Unit
+){
+    var text by rememberSaveable { mutableStateOf("") }
+    Dialog(onDismissRequest = onDismiss) {
+        Column {
+            Text(text = "Добавить новый счетчик")
+            Text(text = "Укажите название")
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Label") }
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                TextButton(
+                    onClick = addCount,
+                    modifier = Modifier.padding(8.dp),
+                ) {
+                    Text("Отмена")
+                }
+                TextButton(
+                    onClick = {  },
+                    modifier = Modifier.padding(8.dp),
+                ) {
+                    Text("Создать")
+                }
+            }
+        }
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
 
 @Composable
 fun CountDetails(
@@ -241,7 +300,7 @@ fun CountDetails(
         modifier = Modifier
     ) {
         items(countList) { item ->
-            CountCard(item.id, item.count)
+            CountCard(item.id, item.count, item.title, item.time)
         }
     }
 
@@ -251,6 +310,8 @@ fun CountDetails(
 fun CountCard(
     id: Int,
     count: Int,
+    title: String,
+    time:String
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -260,8 +321,8 @@ fun CountCard(
             .padding(end = 10.dp, start = 5.dp)
     ) {
         Column {
-            Text(text = "Мой счет $id")
-            Text(text = "Последние изм.: 14.10.2000")
+            Text(text = title)
+            Text(text = "Последние изм.: $time")
         }
         Text(text = "$count")
 
@@ -273,7 +334,7 @@ fun CountCard(
 @Preview(showBackground = true)
 @Composable
 fun CountCardPrewie() {
-    CountCard(1, 65)
+    CountCard(1, 65, "Мой счет", "16.04.2024")
 }
 
 

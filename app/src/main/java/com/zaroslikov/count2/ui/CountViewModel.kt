@@ -53,14 +53,12 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
         itemUiState = ItemDetails(
             id = 5,
             count = itemUiState.count + itemUiState.step,
-            step = itemUiState.step
         )
     }
     fun minus() {
         itemUiState = ItemDetails(
             id = 5,
             count = itemUiState.count - itemUiState.step,
-            step = itemUiState.step
         )
     }
 
