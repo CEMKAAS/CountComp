@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,10 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -222,7 +219,18 @@ fun ImageBody(
     }
 
     if (showBottomSheetSetting.value) {
-
+        BottomSheetSetting(
+            itemUiState = viewModel.itemUiState,
+            onItemValueChange = viewModel::updateItemUiStateSett,
+            showBottomSheetSetting = showBottomSheetSetting,
+            sheetState = sheetStateSetting,
+            updateSett = {
+                scope.launch {
+                    viewModel.updateTable()
+                }
+                showBottomSheetSetting.value = false
+            }
+        )
     }
 
 }
@@ -230,8 +238,11 @@ fun ImageBody(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheetSetting(
+    itemUiState: ItemDetails,
+    onItemValueChange: (ItemDetails) -> Unit,
     showBottomSheetSetting: MutableState<Boolean>,
     sheetState: SheetState,
+    updateSett: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = { showBottomSheetSetting.value = false },
@@ -240,21 +251,23 @@ fun BottomSheetSetting(
             .fillMaxSize()
     ) {
         Column(modifier = Modifier.padding(15.dp)) {
+
             OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
+                value = itemUiState.title,
+                onValueChange = { onItemValueChange(itemUiState.copy(title = it)) },
                 label = { Text("Label") }
             )
+
             OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
+                value = itemUiState.step,
+                onValueChange = { onItemValueChange(itemUiState.copy(step = it)) },
                 label = { Text("Label") }
             )
 
             Text(text = "Мой счет v1.2", fontSize = 25.sp)
             Text(text = "Дорогой друг\nНезабудь вступить в нашу группу ВК!", fontSize = 25.sp)
             Text(text = "https://vk.com/bagesmakestudios", fontSize = 25.sp)
-            Button(onClick = {}) {}
+            Button(onClick = updateSett){}
         }
     }
 }

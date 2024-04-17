@@ -1,6 +1,5 @@
 package com.zaroslikov.count2.data
 
-import android.icu.text.CaseMap.Title
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -15,5 +14,5 @@ data class Item(
     val count: Int, // Кол-во
     val step: Int,  // Шаг счетчика
     val lastCount: Int, // последний счет
-    val time : String // время
+    val time: String // время
 )

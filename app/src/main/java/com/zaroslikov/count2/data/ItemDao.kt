@@ -15,13 +15,16 @@ import kotlinx.coroutines.flow.Flow
 interface ItemDao {
 
     @Query("SELECT * from items")
-    fun getItem() : Flow<List<Item>>
+    fun getItem(): Flow<List<Item>>
+
+    @Query("SELECT * from items")
+    suspend fun getAllItem(): List<Item>
 
     @Query("SELECT * from items WHERE id = :id")
     fun getItemS(id: Int): Flow<Item>
 
     @Query("SELECT * from items WHERE lastCount = 1")
-    fun getlastReadProject() : Flow<Item>
+    fun getlastReadProject(): Flow<Item>
 
     @Query("UPDATE items SET lastCount = 0")
     suspend fun updateToCount()

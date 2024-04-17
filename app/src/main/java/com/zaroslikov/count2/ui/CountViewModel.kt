@@ -13,17 +13,10 @@ import com.zaroslikov.count2.InventoryApplication
 import com.zaroslikov.count2.data.Item
 import com.zaroslikov.count2.data.ItemDao
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 
 class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
@@ -37,6 +30,11 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
 
     init {
         viewModelScope.launch {
+
+            if (itemDao.getAllItem().isEmpty()){
+             itemDao.insert(Item(0,"Мой Счет", 0, 1, 1, "ЫВ"))
+            }
+
             itemUiState = itemDao.getlastReadProject()
                 .filterNotNull()
                 .first()
@@ -48,10 +46,12 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
         itemUiState = itemDao.getlastReadProject().filterNotNull().first().toItemDetal()
     }
 
+
     suspend fun insertTable(item: Item) {
         itemDao.insert(item)
     }
 
+    //Обновляем таблицу
     suspend fun updateTable() {
         itemDao.update(itemUiState.toItem())
     }
@@ -64,12 +64,16 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
         itemUiState = item.toItemDetal()
     }
 
+    fun updateItemUiStateSett(itemDetails: ItemDetails) {
+        itemUiState = itemDetails
+    }
+
     fun plus() {
-        itemUiState = itemUiState.copy(count = itemUiState.count + itemUiState.step, lastCount = 1)
+        itemUiState = itemUiState.copy(count = (itemUiState.count.toInt() + itemUiState.step.toInt()).toString(), lastCount = 1)
     }
 
     fun minus() {
-        itemUiState = itemUiState.copy(count = itemUiState.count - itemUiState.step, lastCount = 1)
+        itemUiState = itemUiState.copy(count = (itemUiState.count.toInt() - itemUiState.step.toInt()).toString(), lastCount = 1)
     }
 
     companion object {
@@ -85,8 +89,8 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
 data class ItemDetails(
     val id: Int = 1,
     val title: String = "",
-    val count: Int = 0,
-    val step: Int = 1,
+    val count:String = "",
+    val step: String = "",
     val lastCount: Int = 1,
     val time: String = ""
 )
@@ -94,8 +98,8 @@ data class ItemDetails(
 fun ItemDetails.toItem(): Item = Item(
     id = id,
     title = title,
-    count = count,
-    step = step,
+    count = count.toInt(),
+    step = step.toInt(),
     lastCount = lastCount,
     time = time
 )
@@ -103,8 +107,8 @@ fun ItemDetails.toItem(): Item = Item(
 fun Item.toItemDetal(): ItemDetails = ItemDetails(
     id = id,
     title = title,
-    count = count,
-    step = step,
+    count = count.toString(),
+    step = step.toString(),
     lastCount = lastCount,
     time = time
 )
