@@ -14,6 +14,6 @@ data class Item(
     val title: String, // название
     val count: Int, // Кол-во
     val step: Int,  // Шаг счетчика
-    val lastCount: String, // последний счет
+    val lastCount: Int, // последний счет
     val time : String // время
 )

@@ -37,29 +37,39 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            itemUiState = itemDao.getItemS(5)
+            itemUiState = itemDao.getlastReadProject()
                 .filterNotNull()
                 .first()
                 .toItemDetal()
-
         }
     }
 
-    suspend fun insertTable() {
-        itemDao.insert(itemUiState.toItem())
+    suspend fun last() {
+        itemUiState = itemDao.getlastReadProject().filterNotNull().first().toItemDetal()
+    }
+
+    suspend fun insertTable(item: Item) {
+        itemDao.insert(item)
+    }
+
+    suspend fun updateTable() {
+        itemDao.update(itemUiState.toItem())
+    }
+
+    suspend fun updateColum() {
+        itemDao.updateToCount()
+    }
+
+    fun updateItemUiState(item: Item) {
+        itemUiState = item.toItemDetal()
     }
 
     fun plus() {
-        itemUiState = ItemDetails(
-            id = 5,
-            count = itemUiState.count + itemUiState.step,
-        )
+        itemUiState = itemUiState.copy(count = itemUiState.count + itemUiState.step, lastCount = 1)
     }
+
     fun minus() {
-        itemUiState = ItemDetails(
-            id = 5,
-            count = itemUiState.count - itemUiState.step,
-        )
+        itemUiState = itemUiState.copy(count = itemUiState.count - itemUiState.step, lastCount = 1)
     }
 
     companion object {
@@ -70,16 +80,15 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
             }
         }
     }
-
 }
 
 data class ItemDetails(
     val id: Int = 1,
-    val title:String = "",
+    val title: String = "",
     val count: Int = 0,
     val step: Int = 1,
-    val lastCount:String = "",
-    val time:String = ""
+    val lastCount: Int = 1,
+    val time: String = ""
 )
 
 fun ItemDetails.toItem(): Item = Item(

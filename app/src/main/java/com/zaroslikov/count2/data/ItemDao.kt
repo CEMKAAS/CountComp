@@ -20,6 +20,11 @@ interface ItemDao {
     @Query("SELECT * from items WHERE id = :id")
     fun getItemS(id: Int): Flow<Item>
 
+    @Query("SELECT * from items WHERE lastCount = 1")
+    fun getlastReadProject() : Flow<Item>
+
+    @Query("UPDATE items SET lastCount = 0")
+    suspend fun updateToCount()
 
     // Specify the conflict strategy as IGNORE, when the user tries to add an
     // existing Item into the database Room ignores the conflict.

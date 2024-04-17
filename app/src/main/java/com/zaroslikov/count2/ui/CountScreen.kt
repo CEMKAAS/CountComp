@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +61,7 @@ import com.zaroslikov.count2.data.Item
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,6 +77,10 @@ fun MyCountApp(
     val sheetState = rememberModalBottomSheetState()
     val showBottomSheet = remember { mutableStateOf(false) }
 
+    //bottomSheet для найстроки
+    val sheetStateSetting = rememberModalBottomSheetState()
+    val showBottomSheetSetting = remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -83,7 +90,7 @@ fun MyCountApp(
                 ),
                 title = {
                     Text(
-                        "sds", maxLines = 1,
+                        viewModel.itemUiState.title, maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
 
@@ -97,7 +104,7 @@ fun MyCountApp(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* do something */ }) {
+                    IconButton(onClick = { showBottomSheetSetting.value = true }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
                             contentDescription = "Localized description"
@@ -111,15 +118,21 @@ fun MyCountApp(
         ImageBody(
             itemUiState = viewModel.itemUiState,
             plus = {
+                scope.launch {
+                    viewModel.updateColum()
+                }
                 viewModel.plus()
                 scope.launch {
-                    viewModel.insertTable()
+                    viewModel.updateTable()
                 }
             },
             minus = {
+                scope.launch {
+                    viewModel.updateColum()
+                }
                 viewModel.minus()
                 scope.launch {
-                    viewModel.insertTable()
+                    viewModel.updateTable()
                 }
             },
             showBottomSheet = showBottomSheet,
@@ -133,10 +146,21 @@ fun MyCountApp(
                 }
             },
             sheetState = sheetState,
+            showBottomSheetSetting = showBottomSheetSetting,
+            buttonSheetSetting = {
+                scope.launch {
+                    sheetStateSetting.hide()
+                }.invokeOnCompletion {
+                    if (!sheetStateSetting.isVisible) {
+                        showBottomSheetSetting.value = false
+                    }
+                }
+            },
+            sheetStateSetting = sheetStateSetting,
+
             countList = countAD,
-            addCount = {scope.launch {
-                viewModel.insertTable()
-            }},
+            scope = scope,
+            viewModel = viewModel,
             modifier = Modifier
                 .padding(contentPadding)
                 .fillMaxSize()
@@ -153,8 +177,12 @@ fun ImageBody(
     showBottomSheet: MutableState<Boolean>,
     buttonSheet: () -> Unit,
     sheetState: SheetState,
+    showBottomSheetSetting: MutableState<Boolean>,
+    buttonSheetSetting: () -> Unit,
+    sheetStateSetting: SheetState,
     countList: List<Item>,
-    addCount: () -> Unit,
+    scope: CoroutineScope,
+    viewModel: CountViewModel,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -190,9 +218,45 @@ fun ImageBody(
     }
 
     if (showBottomSheet.value) {
-        BottomSheet(showBottomSheet, buttonSheet, sheetState, countList, addCount)
+        BottomSheet(showBottomSheet, buttonSheet, sheetState, countList, scope, viewModel)
     }
 
+    if (showBottomSheetSetting.value) {
+
+    }
+
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BottomSheetSetting(
+    showBottomSheetSetting: MutableState<Boolean>,
+    sheetState: SheetState,
+) {
+    ModalBottomSheet(
+        onDismissRequest = { showBottomSheetSetting.value = false },
+        sheetState = sheetState,
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        Column(modifier = Modifier.padding(15.dp)) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Label") }
+            )
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Label") }
+            )
+
+            Text(text = "Мой счет v1.2", fontSize = 25.sp)
+            Text(text = "Дорогой друг\nНезабудь вступить в нашу группу ВК!", fontSize = 25.sp)
+            Text(text = "https://vk.com/bagesmakestudios", fontSize = 25.sp)
+            Button(onClick = {}) {}
+        }
+    }
 }
 
 
@@ -200,10 +264,11 @@ fun ImageBody(
 @Composable
 fun BottomSheet(
     showBottomSheet: MutableState<Boolean>,
-    scope: () -> Unit,
+    scopeFun: () -> Unit,
     sheetState: SheetState,
     countList: List<Item>,
-    addCount: () -> Unit,
+    scope: CoroutineScope,
+    viewModel: CountViewModel
 ) {
     val openAlertDialog = remember { mutableStateOf(false) }
     ModalBottomSheet(
@@ -220,13 +285,13 @@ fun BottomSheet(
                     .fillMaxWidth()
 
             ) {
-                IconButton(onClick = scope) {
+                IconButton(onClick = scopeFun) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBack,
                         contentDescription = "Localized description"
                     )
                 }
-                IconButton(onClick = {openAlertDialog.value= true}) {
+                IconButton(onClick = { openAlertDialog.value = true }) {
                     Icon(
                         imageVector = Icons.Filled.Add,
                         contentDescription = "Localized description"
@@ -236,106 +301,135 @@ fun BottomSheet(
             Text(text = "Значение", fontSize = 25.sp)
             Divider(color = Color.DarkGray, thickness = 1.dp)
             Spacer(modifier = Modifier.height(5.dp))
-            CountDetails(countList = countList)
+            CountDetails(
+                countList = countList,
+                viewModel = viewModel,
+                showBottomSheet = showBottomSheet
+            )
         }
     }
-    if (openAlertDialog.value){
-        AlterDialog(onDismiss = {openAlertDialog.value = true}, addCount = addCount)
+    if (openAlertDialog.value) {
+        AlterDialog(
+            openAlertDialog = openAlertDialog,
+            scope = scope,
+            viewModel = viewModel,
+            showBottomSheet = showBottomSheet
+        )
     }
 }
 
 @Composable
 fun AlterDialog(
-    onDismiss:()-> Unit,
-    addCount: () -> Unit
-){
+    openAlertDialog: MutableState<Boolean>,
+    scope: CoroutineScope,
+    viewModel: CountViewModel,
+    showBottomSheet: MutableState<Boolean>
+) {
     var text by rememberSaveable { mutableStateOf("") }
-    Dialog(onDismissRequest = onDismiss) {
-        Column {
-            Text(text = "Добавить новый счетчик")
-            Text(text = "Укажите название")
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("Label") }
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                TextButton(
-                    onClick = addCount,
-                    modifier = Modifier.padding(8.dp),
+    Dialog(onDismissRequest = { openAlertDialog.value = false }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(375.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column {
+                Text(text = "Добавить новый счетчик")
+                Text(text = "Укажите название")
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("Label") }
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
                 ) {
-                    Text("Отмена")
-                }
-                TextButton(
-                    onClick = {  },
-                    modifier = Modifier.padding(8.dp),
-                ) {
-                    Text("Создать")
+                    TextButton(
+                        onClick = { openAlertDialog.value = false },
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text("Отмена")
+                    }
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                viewModel.updateColum()
+                                viewModel.insertTable(
+                                    Item(
+                                        id = 0,
+                                        title = text,
+                                        count = 0,
+                                        step = 1,
+                                        lastCount = 1,
+                                        time = Calendar.getInstance().time.toString()
+                                    )
+                                )
+                                viewModel.last()
+                            }
+                            openAlertDialog.value = false
+                            showBottomSheet.value = false
+
+                        },
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text("Создать")
+                    }
                 }
             }
         }
-
     }
 }
 
-
-
-
-
-
-
-
-
-
-
 @Composable
 fun CountDetails(
-    countList: List<Item>
+    countList: List<Item>, viewModel: CountViewModel, showBottomSheet: MutableState<Boolean>
 ) {
     LazyColumn(
         modifier = Modifier
     ) {
         items(countList) { item ->
-            CountCard(item.id, item.count, item.title, item.time)
+            CountCard(viewModel, item, showBottomSheet)
         }
     }
-
 }
 
 @Composable
 fun CountCard(
-    id: Int,
-    count: Int,
-    title: String,
-    time:String
+    viewModel: CountViewModel,
+    item: Item,
+    showBottomSheet: MutableState<Boolean>
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(end = 10.dp, start = 5.dp)
-    ) {
-        Column {
-            Text(text = title)
-            Text(text = "Последние изм.: $time")
+    Card(modifier = Modifier.clickable {
+        viewModel.updateItemUiState(item)
+        showBottomSheet.value = false;
+
+    }) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 10.dp, start = 5.dp)
+        ) {
+            Column {
+                Text(text = item.title)
+                Text(text = "Последние изм.: ${item.time}")
+            }
+            Text(text = "${item.count}")
         }
-        Text(text = "$count")
-
+        Divider()
     }
-    Divider()
 }
 
 
-@Preview(showBackground = true)
-@Composable
-fun CountCardPrewie() {
-    CountCard(1, 65, "Мой счет", "16.04.2024")
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun CountCardPrewie() {
+//    CountCard(1, 65, "Мой счет", "16.04.2024")
+//}
 
 
 
