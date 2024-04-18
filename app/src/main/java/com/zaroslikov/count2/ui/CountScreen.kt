@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -103,7 +104,7 @@ fun MyCountApp(
                 actions = {
                     IconButton(onClick = { showBottomSheetSetting.value = true }) {
                         Icon(
-                            imageVector = Icons.Filled.Menu,
+                            imageVector = Icons.Filled.Settings,
                             contentDescription = "Localized description"
                         )
                     }
@@ -154,7 +155,6 @@ fun MyCountApp(
                 }
             },
             sheetStateSetting = sheetStateSetting,
-
             countList = countAD,
             scope = scope,
             viewModel = viewModel,
@@ -191,7 +191,7 @@ fun ImageBody(
 
         Spacer(modifier = Modifier.padding(8.dp))
         Text(
-            text = itemUiState.count.toString(), fontSize = 50.sp
+            text = itemUiState.count, fontSize = 50.sp
         )
         Row() {
             Image(
@@ -254,14 +254,16 @@ fun BottomSheetSetting(
 
             OutlinedTextField(
                 value = itemUiState.title,
-                onValueChange = { onItemValueChange(itemUiState.copy(title = it)) },
-                label = { Text("Label") }
+                onValueChange = {onItemValueChange(itemUiState.copy(title = it))},
+                label = { Text("Мой счет") }
+
             )
 
             OutlinedTextField(
                 value = itemUiState.step,
-                onValueChange = { onItemValueChange(itemUiState.copy(step = it)) },
-                label = { Text("Label") }
+                onValueChange = {onItemValueChange(itemUiState.copy(step = it))},
+                label = { Text("Шаг") }
+
             )
 
             Text(text = "Мой счет v1.2", fontSize = 25.sp)
@@ -304,7 +306,7 @@ fun BottomSheet(
                         contentDescription = "Localized description"
                     )
                 }
-                IconButton(onClick = { openAlertDialog.value = true }) {
+                IconButton(onClick = {openAlertDialog.value = true}) {
                     Icon(
                         imageVector = Icons.Filled.Add,
                         contentDescription = "Localized description"
@@ -384,7 +386,6 @@ fun AlterDialog(
                             }
                             openAlertDialog.value = false
                             showBottomSheet.value = false
-
                         },
                         modifier = Modifier.padding(8.dp),
                     ) {
