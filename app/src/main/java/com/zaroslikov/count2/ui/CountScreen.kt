@@ -2,6 +2,7 @@ package com.zaroslikov.count2.ui
 
 import android.annotation.SuppressLint
 import android.icu.number.IntegerWidth
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -253,13 +255,18 @@ fun BottomSheetSetting(
     scope: CoroutineScope,
     viewModel: CountViewModel,
 ) {
-//    val anonotatedString = buildAnnotatedString {
-//        append("Дорогой друг\\nНезабудь вступить в нашу ")
-//        pushStringAnnotation(tag = "URL", annotation = "https://vk.com/bagesmakestudios")
-//        {
-//            append("группу ВК!")
-//        }
-//    }
+    val anonotatedString = buildAnnotatedString {
+        append("Дорогой друг\nНезабудь вступить в нашу ")
+        pushStringAnnotation(tag = "URL", annotation = "https://vk.com/bagesmakestudios")
+        withStyle(
+            style = SpanStyle(
+                color = Color.Blue,
+            )
+        ) {
+            append("группу в ВК")
+        }
+        pop()
+    }
     var text by rememberSaveable { mutableStateOf(itemUiState.title) }
     ModalBottomSheet(
         onDismissRequest = { showBottomSheetSetting.value = false },
@@ -288,17 +295,9 @@ fun BottomSheetSetting(
 
             )
             Text(text = "Мой счет v1.2", fontSize = 25.sp, textAlign = TextAlign.Center)
-            Text(
-                text = "Дорогой друг\nНезабудь вступить в нашу группу ВК!",
-                fontSize = 19.sp,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-            Text(
-                text = "https://vk.com/bagesmakestudios",
-                fontSize = 19.sp,
-                textAlign = TextAlign.Center
-            )
+            ClickableText(text = anonotatedString, onClick ={offset ->anonotatedString.getStringAnnotations(tag = "URL", start = offset, end = offset).firstOrNull()?.let {
+
+            }})
             Spacer(modifier = Modifier.height(5.dp))
             Button(onClick = {
                 onItemValueChange(itemUiState.copy(title = text))
@@ -310,7 +309,6 @@ fun BottomSheetSetting(
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
