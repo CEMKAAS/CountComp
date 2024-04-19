@@ -1,5 +1,7 @@
 package com.zaroslikov.count2.ui
 
+import android.annotation.SuppressLint
+import android.icu.number.IntegerWidth
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,8 +21,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,20 +50,29 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.zaroslikov.count2.R
 import com.zaroslikov.count2.data.Item
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import kotlin.reflect.KSuspendFunction0
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -182,6 +195,7 @@ fun ImageBody(
     viewModel: CountViewModel,
     modifier: Modifier = Modifier
 ) {
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.SpaceAround,
@@ -223,13 +237,8 @@ fun ImageBody(
             itemUiState = viewModel.itemUiState,
             onItemValueChange = viewModel::updateItemUiStateSett,
             showBottomSheetSetting = showBottomSheetSetting,
-            sheetState = sheetStateSetting,
-            updateSett = {
-                scope.launch {
-                    viewModel.updateTable()
-                }
-                showBottomSheetSetting.value = false
-            }
+            scope = scope,
+            viewModel = viewModel
         )
     }
 
@@ -241,35 +250,63 @@ fun BottomSheetSetting(
     itemUiState: ItemDetails,
     onItemValueChange: (ItemDetails) -> Unit,
     showBottomSheetSetting: MutableState<Boolean>,
-    sheetState: SheetState,
-    updateSett: () -> Unit
+    scope: CoroutineScope,
+    viewModel: CountViewModel,
 ) {
+//    val anonotatedString = buildAnnotatedString {
+//        append("Дорогой друг\\nНезабудь вступить в нашу ")
+//        pushStringAnnotation(tag = "URL", annotation = "https://vk.com/bagesmakestudios")
+//        {
+//            append("группу ВК!")
+//        }
+//    }
+    var text by rememberSaveable { mutableStateOf(itemUiState.title) }
     ModalBottomSheet(
         onDismissRequest = { showBottomSheetSetting.value = false },
-        sheetState = sheetState,
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Column(modifier = Modifier.padding(15.dp)) {
+        Column(
+            modifier = Modifier.padding(15.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
             OutlinedTextField(
-                value = itemUiState.title,
-                onValueChange = {onItemValueChange(itemUiState.copy(title = it))},
-                label = { Text("Мой счет") }
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Название счета") },
+                modifier = Modifier.fillMaxWidth()
 
             )
-
             OutlinedTextField(
                 value = itemUiState.step,
-                onValueChange = {onItemValueChange(itemUiState.copy(step = it))},
-                label = { Text("Шаг") }
+                onValueChange = { onItemValueChange(itemUiState.copy(step = it)) },
+                label = { Text("Шаг") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 5.dp)
 
             )
-
-            Text(text = "Мой счет v1.2", fontSize = 25.sp)
-            Text(text = "Дорогой друг\nНезабудь вступить в нашу группу ВК!", fontSize = 25.sp)
-            Text(text = "https://vk.com/bagesmakestudios", fontSize = 25.sp)
-            Button(onClick = updateSett){}
+            Text(text = "Мой счет v1.2", fontSize = 25.sp, textAlign = TextAlign.Center)
+            Text(
+                text = "Дорогой друг\nНезабудь вступить в нашу группу ВК!",
+                fontSize = 19.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(5.dp))
+            Text(
+                text = "https://vk.com/bagesmakestudios",
+                fontSize = 19.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(5.dp))
+            Button(onClick = {
+                onItemValueChange(itemUiState.copy(title = text))
+                scope.launch {
+                    viewModel.updateTable()
+                }
+                showBottomSheetSetting.value = false
+            }) { Text(text = "Сохранить") }
         }
     }
 }
@@ -298,7 +335,6 @@ fun BottomSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
-
             ) {
                 IconButton(onClick = scopeFun) {
                     Icon(
@@ -306,7 +342,10 @@ fun BottomSheet(
                         contentDescription = "Localized description"
                     )
                 }
-                IconButton(onClick = {openAlertDialog.value = true}) {
+                IconButton(onClick = {
+                    openAlertDialog.value = true
+                    scope.launch { viewModel.getAllItem() }
+                }) {
                     Icon(
                         imageVector = Icons.Filled.Add,
                         contentDescription = "Localized description"
@@ -328,11 +367,12 @@ fun BottomSheet(
             openAlertDialog = openAlertDialog,
             scope = scope,
             viewModel = viewModel,
-            showBottomSheet = showBottomSheet
+            showBottomSheet = showBottomSheet,
         )
     }
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun AlterDialog(
     openAlertDialog: MutableState<Boolean>,
@@ -340,22 +380,30 @@ fun AlterDialog(
     viewModel: CountViewModel,
     showBottomSheet: MutableState<Boolean>
 ) {
-    var text by rememberSaveable { mutableStateOf("") }
+    val count = viewModel.textCount
+    var text by rememberSaveable { mutableStateOf("Мой Счет $count") }
     Dialog(onDismissRequest = { openAlertDialog.value = false }) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(375.dp)
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
-            Column {
-                Text(text = "Добавить новый счетчик")
-                Text(text = "Укажите название")
+            Column(modifier = Modifier.padding(5.dp)) {
+                Text(
+                    text = "Добавить новый счетчик",
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 5.dp),
+                    fontSize = 19.sp
+                )
+                Text(
+                    text = "Укажите название",
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 10.dp)
+                )
+                Spacer(modifier = Modifier.padding(vertical = 10.dp))
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text("Label") }
+                    label = { Text("Название счета") }
                 )
                 Row(
                     modifier = Modifier
@@ -370,16 +418,19 @@ fun AlterDialog(
                     }
                     TextButton(
                         onClick = {
+                            val calendar = Calendar.getInstance()
+                            val timeIn =
+                                calendar[Calendar.DAY_OF_MONTH].toString() + "." + (calendar[Calendar.MONTH] + 1) + "." + calendar[Calendar.YEAR]
                             scope.launch {
                                 viewModel.updateColum()
                                 viewModel.insertTable(
                                     Item(
                                         id = 0,
-                                        title = text,
+                                        title = text.ifEmpty { "Мой Счет $count" },
                                         count = 0,
                                         step = 1,
                                         lastCount = 1,
-                                        time = Calendar.getInstance().time.toString()
+                                        time = timeIn
                                     )
                                 )
                                 viewModel.last()
@@ -416,35 +467,45 @@ fun CountCard(
     item: Item,
     showBottomSheet: MutableState<Boolean>
 ) {
-    Card(modifier = Modifier.clickable {
-        viewModel.updateItemUiState(item)
-        showBottomSheet.value = false;
-
-    }) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(end = 10.dp, start = 5.dp)
-        ) {
-            Column {
-                Text(text = item.title)
-                Text(text = "Последние изм.: ${item.time}")
-            }
-            Text(text = "${item.count}")
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(end = 10.dp, start = 5.dp)
+            .clickable {
+                viewModel.updateItemUiState(item)
+                showBottomSheet.value = false;
+            },
+    ) {
+        Column {
+            Text(text = item.title)
+            Text(text = "Последние изм.: ${item.time}")
         }
-        Divider()
+        Text(text = "${item.count}")
     }
+    Divider()
 }
 
 
 //@Preview(showBackground = true)
 //@Composable
 //fun CountCardPrewie() {
-//    CountCard(1, 65, "Мой счет", "16.04.2024")
+//    CountCard()
 //}
 
 
-
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Preview(showBackground = true)
+//@Composable
+//fun BottomSheetSettingsPrewie() {
+//BottomSheetSetting(
+//    itemUiState = ,
+//    onItemValueChange = ,
+//    showBottomSheetSetting = ,
+//    sheetState =
+//) {
+//
+//}
+//}
 

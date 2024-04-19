@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
 
@@ -28,11 +29,17 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
     var itemUiState by mutableStateOf(ItemDetails())
         private set
 
+    var textCount by mutableStateOf("")
+        private set
+
     init {
         viewModelScope.launch {
+            val calendar = Calendar.getInstance()
+            val timeIn =
+                calendar[Calendar.DAY_OF_MONTH].toString() + "." + (calendar[Calendar.MONTH] + 1) + "." + calendar[Calendar.YEAR]
 
             if (itemDao.getAllItem().isEmpty()){
-             itemDao.insert(Item(0,"Мой Счет", 0, 1, 1, "ЫВ"))
+             itemDao.insert(Item(0,"Мой Счет", 0, 1, 1, timeIn))
             }
 
             itemUiState = itemDao.getlastReadProject()
@@ -40,6 +47,10 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
                 .first()
                 .toItemDetal()
         }
+    }
+
+    suspend fun getAllItem(){
+         textCount = (itemDao.getAllItem().size+1).toString()
     }
 
     suspend fun last() {
@@ -69,11 +80,18 @@ class CountViewModel(private val itemDao: ItemDao) : ViewModel() {
     }
 
     fun plus() {
-        itemUiState = itemUiState.copy(count = (itemUiState.count.toInt() + itemUiState.step.toInt()).toString(), lastCount = 1)
+        val calendar = Calendar.getInstance()
+        val timeIn =
+            calendar[Calendar.DAY_OF_MONTH].toString() + "." + (calendar[Calendar.MONTH] + 1) + "." + calendar[Calendar.YEAR]
+
+        itemUiState = itemUiState.copy(count = (itemUiState.count.toInt() + itemUiState.step.toInt()).toString(), lastCount = 1, time = timeIn)
     }
 
     fun minus() {
-        itemUiState = itemUiState.copy(count = (itemUiState.count.toInt() - itemUiState.step.toInt()).toString(), lastCount = 1)
+        val calendar = Calendar.getInstance()
+        val timeIn =
+            calendar[Calendar.DAY_OF_MONTH].toString() + "." + (calendar[Calendar.MONTH] + 1) + "." + calendar[Calendar.YEAR]
+        itemUiState = itemUiState.copy(count = (itemUiState.count.toInt() - itemUiState.step.toInt()).toString(), lastCount = 1, time = timeIn)
     }
 
     companion object {
